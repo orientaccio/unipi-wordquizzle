@@ -78,7 +78,7 @@ public class MainClassWQServer
 					 	
 					 	// set the client channel to non-blocking
 					 	client.configureBlocking(false);
-					 	ByteBuffer output = ByteBuffer.allocate(WQServer.MAX_MESSAGE_LENGTH);
+					 	ByteBuffer output = ByteBuffer.allocate(WQProtocol.MAX_MESSAGE_LENGTH);
 					 	output.flip();
 					 	
 					 	// initialize & clean buffer
@@ -105,23 +105,26 @@ public class MainClassWQServer
 						// choose function
 						switch (commands[0])
 						{
-							case "login":
+							case WQProtocol.COMMAND_LOGIN:
 								result = server.Login(commands[1], commands[2]);
 								response = Integer.toString(result);
 								break;
-							case "add_friend":
+							case WQProtocol.COMMAND_ADDFRIEND:
 								result = server.AddFriend(commands[2], commands[1]);
 								response = Integer.toString(result);
+								break;							
+							case WQProtocol.COMMAND_CHALLENGE:
+									break;
+							case WQProtocol.COMMAND_SHOWSCORES:
+								response = server.ShowScore(commands[1]);
+								break;							
+							case WQProtocol.COMMAND_FRIENDLIST:
+								response = server.ShowFriendList(commands[1]).toString();
 								break;
-							case "friend_list":
+							case WQProtocol.COMMAND_SHOWLEADERBOARD:
+								response = server.ShowLeaderboard(commands[1]).toString();
 								break;
-							case "challenge":
-								break;
-							case "show_scores":
-								break;
-							case "show_leaderboard":
-								break;
-							case "logout":								
+							case WQProtocol.COMMAND_LOGOUT:								
 								server.Logout(commands[1]);
 								key.cancel();
 								key.channel().close();

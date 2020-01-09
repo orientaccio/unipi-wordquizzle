@@ -1,3 +1,5 @@
+import org.json.simple.JSONObject;
+
 public interface IWQServer
 {
 	/**
@@ -33,14 +35,6 @@ public interface IWQServer
 	public int AddFriend(String nickUser, String nickFriend);
 	
 	/**
-	 * Show all the friends of the current user
-	 * 
-	 * @param	nickUser is the nickname
-	 * @effect	returns a JSON object containing all the friends	
-	 */
-	public void ShowFriendList(String nickUser);
-	
-	/**
 	 * The server sends a challenge request to the nickFriend using UDP, 
 	 * if accepted in time (T1) the challenge begins.
 	 * The server chooses K random words from the dictionary,
@@ -70,7 +64,15 @@ public interface IWQServer
 	 * @param	nickUser is the nickname
 	 * @effect  show the scores
 	 */
-	public void ShowScore(String nickUser);
+	public String ShowScore(String nickUser);
+	
+	/**
+	 * Show all the friends of the current user
+	 * 
+	 * @param	nickUser is the nickname
+	 * @return	returns a JSON object containing all the friends	
+	 */
+	public JSONObject ShowFriendList(String nickUser);
 	
 	/**
 	 * Show the score leaderboard of the user and his friends in JSON
@@ -78,5 +80,5 @@ public interface IWQServer
 	 * @param	nickUser is the nickname
 	 * @effect	show leaderboad
 	 */
-	public int ShowLeaderboard(String nickUser);
+	public JSONObject ShowLeaderboard(String nickUser);
 }

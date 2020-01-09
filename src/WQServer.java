@@ -28,7 +28,6 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 {
 	private static final long serialVersionUID = 1L;
 	public static final int DEFAULT_PORT = 1919;
-	public static final int MAX_MESSAGE_LENGTH = 100;
 	private static final String PATH_USERDATA = "UserData.json";
 
 	/**
@@ -148,18 +147,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		
 		return WQProtocol.CODE_SUCCESS;
 	}
-	
-	/**
-	 * Show all the friends of the current user
-	 * 
-	 * @param	nickUser is the nickname
-	 * @effect	returns a JSON object containing all the friends	
-	 */
-	public void ShowFriendList(String nickUser)
-	{
-		
-	}
-	
+
 	/**
 	 * The server sends a challenge request to the nickFriend using UDP, 
 	 * if accepted in time (T1) the challenge begins.
@@ -186,15 +174,53 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 	{
 		return 0;
 	}
-	
+
 	/**
 	 * Show the score of every game of the player
 	 * 
 	 * @param	nickUser is the nickname
 	 * @effect  show the scores
 	 */
-	public void ShowScore(String nickUser)
+	public String ShowScore(String nickUser)
 	{
+		if (nickUser == null)
+			return null;
+		
+		// friend not found on this server
+		UserData tmpUser = users.get(nickUser);
+		if (tmpUser == null)
+			return null;
+		
+		return Integer.toString(tmpUser.GetTotalScore());
+//		int score = 0;
+//		for (int i = 0; i < tmpUser.listScores.size(); i++)
+//			score += tmpUser.listScores.get(i);
+//		return Integer.toString(score);
+	}
+
+	/**
+	 * Show all the friends of the current user
+	 * 
+	 * @param	nickUser is the nickname
+	 * @return	returns a JSON object containing all the friends	
+	 */
+	public JSONObject ShowFriendList(String nickUser)
+	{
+		if (nickUser == null)
+			return null;
+		
+		// user not found on this server
+		UserData tmpUser = users.get(nickUser);
+		if (tmpUser == null)
+			return null;
+		
+		// create JSON response
+		JSONObject friends = new JSONObject();
+		JSONArray friendlist = new JSONArray();
+		for (int i = 0; i < tmpUser.listFriends.size(); i++)
+			friendlist.add(tmpUser.listFriends.get(i));
+		friends.put("friendlist", friendlist);
+		return friends;
 	}
 	
 	/**
@@ -203,9 +229,43 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 	 * @param	nickUser is the nickname
 	 * @effect	show leaderboad
 	 */
-	public int ShowLeaderboard(String nickUser)
+	public JSONObject ShowLeaderboard(String nickUser)
 	{
-		return 0;
+		if (nickUser == null)
+			return null;
+		
+		// user not found on this server
+		UserData tmpUser = users.get(nickUser);
+		if (tmpUser == null)
+			return null;
+		
+		// create leaderboard
+		JSONObject leaderboard = new JSONObject();
+		JSONArray arrayUsers = new JSONArray();
+		
+//		List<String> tmpFriends = tmpUser.listFriends;
+		List<String> tmpFriends = new UserData(tmpUser).listFriends;
+		while(tmpFriends.size() > 0)
+		{
+			int max = 0;
+			int index = 0;
+			for (int i = 0; i < tmpFriends.size(); i++)
+			{
+				int score = users.get(tmpFriends.get(i)).GetTotalScore();
+				if (score > max)
+				{
+					max = score;
+					index = i;
+				}
+			}
+			JSONObject user = new JSONObject();
+			user.put("nickname", tmpFriends.get(index));
+			user.put("score", max);
+			arrayUsers.add(user);
+			tmpFriends.remove(index);
+		}
+		leaderboard.put("leaderboard", arrayUsers);
+		return leaderboard;
 	}
 	
 	/* -----------------------------------------------------------*/
@@ -230,44 +290,6 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 	@SuppressWarnings("unchecked")
 	private void SaveUserDataJSON(UserData user)
 	{
-//		JSONParser parser = new JSONParser();
-//		try 
-//		{
-//			Object obj = parser.parse(new FileReader(PATH_USERDATA));
-//			JSONArray listUsers = (JSONArray) obj;  
-//			for (int i = 0; i < listUsers.size(); i++)
-//			{
-//				JSONObject userJSON = (JSONObject) listUsers.get(i);
-//				String tmp = (String) userJSON.get("nickname");
-//				if (user.nickName.equals(tmp))
-//				{
-//					// update friendlist - scorelist
-//		            JSONArray friendlist = new JSONArray();
-//		            for (int j = 0; j < user.listFriends.size(); j++)
-//		            	friendlist.add(user.listFriends.get(j));
-//		            userJSON.put("friendlist", friendlist);
-//
-//		            JSONArray scorelist = new JSONArray();
-//		            for (int j = 0; j < user.listScores.size(); j++)
-//		            	scorelist.add(user.listScores.get(j));
-//		            userJSON.put("scorelist", scorelist);
-//		            
-//					return;
-//				}
-//			}
-//			
-//			// not found, append the new user
-//			JSONObject newUser = new JSONObject();
-//			newUser.put("nickname", user.nickName);
-//			newUser.put("nickname", user.nickName);
-//			newUser.put("nickname", user.nickName);
-//			
-//			listUsers.add(obj);
-//		}
-//		catch (FileNotFoundException e) 				{ e.printStackTrace(); }
-//		catch (IOException e) 							{ e.printStackTrace(); } 
-//		catch (org.json.simple.parser.ParseException e) { e.printStackTrace(); }
-//		
 		// all the user list
         JSONArray jsonArray = new JSONArray();
 		
@@ -286,7 +308,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 
             JSONArray scorelist = new JSONArray();
             for (int i = 0; i < entry.getValue().listScores.size(); i++)
-            	scorelist.add(entry.getValue().listScores.get(i));
+            	scorelist.add(new Integer(entry.getValue().listScores.get(i)));
             obj.put("scorelist", scorelist);
             
             // add the new object to jsonArray
@@ -311,20 +333,20 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 			JSONArray listUsers = (JSONArray) obj;  
 			for (int i = 0; i < listUsers.size(); i++)
 			{
-				JSONObject user = (JSONObject) listUsers.get(i);
+				JSONObject userJSON = (JSONObject) listUsers.get(i);
 				UserData tmp = new UserData();
-				tmp.nickName = (String) user.get("nickname");
-				tmp.password = (String) user.get("password");
-				tmp.registrationDate = (String) user.get("registrationDate");
+				tmp.nickName = (String) userJSON.get("nickname");
+				tmp.password = (String) userJSON.get("password");
+				tmp.registrationDate = (String) userJSON.get("registrationDate");
 				
-				JSONArray listFriends = (JSONArray) user.get("friendlist");
+				JSONArray listFriends = (JSONArray) userJSON.get("friendlist");
 				for (int j = 0; j < listFriends.size(); j++)
 					tmp.listFriends.add((String) listFriends.get(j));
 
-				JSONArray listScores= (JSONArray) user.get("scorelist");
+				JSONArray listScores= (JSONArray) userJSON.get("scorelist");
 				for (int j = 0; j < listScores.size(); j++)
-					tmp.listScores.add((Integer) listScores.get(j));
-				
+					tmp.listScores.add(new Integer(((Long) listScores.get(j)).intValue()));
+
 				users.put(tmp.nickName, tmp);
 			}
 		}
@@ -333,6 +355,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		catch (org.json.simple.parser.ParseException e) { e.printStackTrace(); }
 	} 
 	
+	@SuppressWarnings("unused")
 	private void PrintUsers()
 	{
 		for (Map.Entry<String, UserData> entry : users.entrySet())
@@ -341,10 +364,11 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 			System.out.println(entry.getValue().password);
 			System.out.println(entry.getValue().registrationDate);
 			for (String value : entry.getValue().listFriends)
-				System.out.print(value + " - ");
+				System.out.print(value + ", ");
 			for (Integer value : entry.getValue().listScores)
-				System.out.print(value + " - ");
+				System.out.print(value + ", ");
 			System.out.println();
+			System.out.println("-----------------------------");
 		}
 	}
 }

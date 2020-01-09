@@ -8,8 +8,6 @@ import java.nio.channels.SocketChannel;
 public class WQClient
 {
 	public static int DEFAULT_PORT = 1919;
-	public static int MAX_MESSAGE_LENGTH = 100;
-	
 	public String nickname;
 	public boolean connected;
 	
@@ -27,7 +25,7 @@ public class WQClient
 	{
 		address = new InetSocketAddress(InetAddress.getLoopbackAddress(), port);
 		client = SocketChannel.open(address);
-		buffer = ByteBuffer.allocate(WQClient.MAX_MESSAGE_LENGTH);
+		buffer = ByteBuffer.allocate(WQProtocol.MAX_MESSAGE_LENGTH);
 	}
 	
 	public void WriteMessage(String command) throws IOException

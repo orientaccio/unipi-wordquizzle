@@ -6,6 +6,9 @@ public class BufferUtils
 {
 	public static void WriteBuffer(SocketChannel client, ByteBuffer buffer, String response) throws IOException
 	{
+		if (client == null || buffer == null || response == null)
+			return;
+		
 		// writing response in socket channel
 		buffer.clear();
 		buffer.put(response.getBytes());
@@ -16,6 +19,9 @@ public class BufferUtils
 	
 	public static String ReadBuffer(SocketChannel client, ByteBuffer buffer) throws IOException
 	{
+		if (client == null || buffer == null)
+			return null;
+		
 		// retrieve response from buffer
 		String response = "";
 		buffer.clear();

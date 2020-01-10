@@ -21,7 +21,7 @@ public class MainClassWQClient
 		// TCP connection variable
 		int port;
 		try 						{ port = Integer.parseInt(args[0]); } 
-		catch (RuntimeException ex) { port = WQClient.DEFAULT_PORT; }
+		catch (RuntimeException ex) { port = WQClient.DEFAULT_PORT_TCP;	}
 		
 		// user input command, response from server
 		Scanner input = new Scanner(System.in);
@@ -55,14 +55,16 @@ public class MainClassWQClient
 					break;
 				case WQProtocol.COMMAND_LOGIN:
 					// guard
-					if (commands.length != 3)
+					if (client.connected || commands.length != 3)
 					{
-						response = "Command incomplete.";
+						response = (client.connected)		? "Already logged."  : response;
+						response = (commands.length != 3) 	? "Wrong arguments." : response;
 						break;
 					}
 					
 					// initialize connection variables
 					client.InitializeSocket(port);
+					String address = client.GetAddressSocketUDP();
 					
 					// read write
 					client.WriteMessage(command);
@@ -73,12 +75,21 @@ public class MainClassWQClient
 					client.nickname = (client.connected) ? commands[1] : null;
 					response = (client.connected) ? "Login success." :
 											 		"Login failed."  ;
+					
+					if (!client.connected)
+						break;
+					
+					// send UDP info to server
+					address += " " + client.nickname;
+					address = address.substring(1);
+//					System.out.println(address);
+					client.WriteMessage(address);
 					break;
 				case WQProtocol.COMMAND_ADDFRIEND:
 					// guard
 					if (!client.connected || commands.length != 2 || commands[1].equals(client.nickname))
 					{
-						response = (!client.connected) 		? "Not logged." 				 : response;
+						response = (!client.connected) 		? "Not logged." 	 : response;
 						response = (commands.length != 2) 	? "Wrong arguments." : response;
 						response = (commands[1].equals(client.nickname)) ? "Friend invalid." : response;
 						break;
@@ -93,8 +104,29 @@ public class MainClassWQClient
 					
 					// elaborate response
 					success = response.equals(Integer.toString(WQProtocol.CODE_SUCCESS));
-					response = (success) ? "Friendship " + client.nickname + "-" + commands[1] + " created":
-										   "Command failed" ;
+					response = (success) ? "Friendship " + client.nickname + "-" + commands[1] + " created"
+										 : "Command failed" ;
+					break;
+				case WQProtocol.COMMAND_CHALLENGE:
+					// guard
+					if (!client.connected || commands.length != 2)
+					{
+						response = (!client.connected) 		? "Not logged." 	 : response;
+						response = (commands.length != 1) 	? "Wrong arguments." : response ;
+						break;
+					}
+					
+					// add nickname in the command
+					command = command.concat(" ").concat(client.nickname);
+					
+					// read and write
+					client.WriteMessage(command);
+					response = client.ReadMessage();
+					
+					// elaborate response
+					success = response != null;
+					response = (success) ? "Challenge sent. Waiting for acceptance..." 
+										 : "Command failed" ;
 					break;
 				case WQProtocol.COMMAND_SHOWSCORES:
 					// guard
@@ -102,6 +134,7 @@ public class MainClassWQClient
 					{
 						response = (!client.connected) 		? "Not logged." 	 : response;
 						response = (commands.length != 1) 	? "Wrong arguments." : response ;
+						break;
 					}
 					
 					// add nickname in the command
@@ -121,6 +154,7 @@ public class MainClassWQClient
 					{
 						response = (!client.connected) 		? "Not logged." 	 : response;
 						response = (commands.length != 1) 	? "Wrong arguments." : response ;
+						break;
 					}
 					
 					// add nickname in the command
@@ -151,6 +185,7 @@ public class MainClassWQClient
 					{
 						response = (!client.connected) 		? "Not logged." 	 : response;
 						response = (commands.length != 1) 	? "Wrong arguments." : response ;
+						break;
 					}
 					
 					// add nickname in the command
@@ -177,7 +212,37 @@ public class MainClassWQClient
 					success = response != null;
 					response = (success) ? response : "Command failed" ;
 					break;
+				case WQProtocol.COMMAND_LOGOUT:
+					// guard
+					if (!client.connected || commands.length != 1)
+					{
+						response = (!client.connected) 		? "Not logged." 	 : response;
+						response = (commands.length != 1) 	? "Wrong arguments." : response ;
+						break;
+					}
+					
+					// add nickname in the command
+					command = command.concat(" ").concat(client.nickname);
+					
+					// read and write
+					client.WriteMessage(command);
+					response = client.ReadMessage();
+					
+					// response positive -> set connected = true
+					client.connected = response.equals(Integer.toString(WQProtocol.CODE_FAIL));
+					response = (client.connected) ? "Logout failed." :
+											 		"Logout success.";
+					break;
 				default:
+					// response to challenge
+					if (client.listener.challenged)
+					{
+						client.WriteMessage(command);
+						response = client.ReadMessage();
+						break;
+					}
+					
+					// unknown command
 					System.out.println("Command not available.");
 			}
 			if (response != null)

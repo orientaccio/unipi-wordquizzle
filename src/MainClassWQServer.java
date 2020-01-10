@@ -26,7 +26,7 @@ public class MainClassWQServer
 		// port selection
 		int port;
 		try 						{ port = Integer.parseInt(args[0]); } 
-		catch (RuntimeException ex) { port = WQServer.DEFAULT_PORT; 	}
+		catch (RuntimeException ex) { port = WQServer.DEFAULT_PORT_TCP;	}
 		
 		// initialize channel and selector vars
 		ServerSocketChannel serverChannel;
@@ -94,7 +94,7 @@ public class MainClassWQServer
 						ByteBuffer buffer = (ByteBuffer) key.attachment();
 						
 						// retrieve message from buffer
-						String response = "";
+						String response = null;
 						String request = BufferUtils.ReadBuffer(client, buffer);
 						request = request.trim();
 						
@@ -114,7 +114,9 @@ public class MainClassWQServer
 								response = Integer.toString(result);
 								break;							
 							case WQProtocol.COMMAND_CHALLENGE:
-									break;
+								result = server.Challenge(commands[2], commands[1]);
+								response = Integer.toString(result);
+								break;
 							case WQProtocol.COMMAND_SHOWSCORES:
 								response = server.ShowScore(commands[1]);
 								break;							
@@ -128,17 +130,25 @@ public class MainClassWQServer
 								server.Logout(commands[1]);
 								key.cancel();
 								key.channel().close();
+								client.close();
 								break;
 							default:
-								break;
+								// read user UDP address and port
+								if (commands.length == 3)
+									server.SetUserUDPAddress(commands[2], commands[0], commands[1]);
+								// read answer for challenge (Y/N) 
+								if (commands.length == 1 && commands[0].length() == 1)
+									response = server.ResponseChallenge(commands[0]);
 						}
 						
 						// send response
 						BufferUtils.WriteBuffer(client, buffer, response);
+//						System.out.println(response);
 					}
 				}
 				catch (IOException ex) 
 				{ 
+					ex.printStackTrace();
 					key.cancel();
 					try { key.channel().close(); }
 					catch (IOException cex) {} 

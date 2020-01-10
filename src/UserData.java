@@ -1,5 +1,6 @@
 import java.util.List;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;  
 import java.util.Date;
@@ -15,6 +16,9 @@ public class UserData implements Serializable
 	public List<String> listFriends;
 	public List<Integer> listScores;
 	public int status;
+	
+	public InetAddress UDPAddress;
+	public int UDPPort;
 	
 	/**
 	 * 	Create a new user with nickname and password

@@ -1,3 +1,5 @@
+import java.io.IOException;
+
 import org.json.simple.JSONObject;
 
 public interface IWQServer
@@ -9,9 +11,9 @@ public interface IWQServer
 	 * 
 	 * @param	nickUser is the nickname
 	 * @param	password is the password of nickname	
-	 * @return	1 if success
-	 * 			0 error: already logged in,
-	 * 					password wrong
+	 * @return	WQProtocol.CODE_SUCCECSS if success
+	 * 			WQProtocol.CODE_FAIL	 error: already logged in,
+	 * 											password wrong
 	 */
 	public int Login(String nickUser, String password);
 	
@@ -19,9 +21,10 @@ public interface IWQServer
 	 * Logout of an online user closing TCP
 	 * 
 	 * @param	nickUser is the nickname	
-	 * @effect	logout of the user
+	 * @return	WQProtocol.CODE_SUCCECSS if success
+	 * 			WQProtocol.CODE_FAIL	 error
 	 */
-	public void Logout(String nickUser);
+	public int Logout(String nickUser);
 	
 	/**
 	 * The current user adds a friend to his friend-list
@@ -55,8 +58,9 @@ public interface IWQServer
 	 * @return	1 if success
 	 * 			0 error: nickFriend not found in friend-list
 	 * 			2 if challenge not accepted
+	 * @throws	IOException 
 	 */
-	public int Challenge(String nickUser, String nickFriend);
+	public int Challenge(String nickUser, String nickFriend) throws IOException;
 	
 	/**
 	 * Show the score of every game of the player

@@ -93,6 +93,10 @@ public class MainClassWQServer
 						SocketChannel client = (SocketChannel) key.channel();
 						ByteBuffer buffer = (ByteBuffer) key.attachment();
 						
+						// if the player is in challenge room, the threadRoom processes buffer
+						if (server.InRooms(key))
+							continue;
+						
 						// retrieve message from buffer
 						String response = null;
 						String request = BufferUtils.ReadBuffer(client, buffer);
@@ -116,6 +120,10 @@ public class MainClassWQServer
 							case WQProtocol.COMMAND_CHALLENGE:
 								result = server.Challenge(commands[2], commands[1]);
 								response = Integer.toString(result);
+								
+								// create room for challenge
+								if (result == WQProtocol.CODE_SUCCESS)
+									server.CreateChallengeRoom(commands[2], commands[1], key);
 								break;
 							case WQProtocol.COMMAND_SHOWSCORES:
 								response = server.ShowScore(commands[1]);
@@ -137,8 +145,8 @@ public class MainClassWQServer
 								if (commands.length == 3)
 									server.SetUserUDPAddress(commands[2], commands[0], commands[1]);
 								// read answer for challenge (Y/N) 
-								if (commands.length == 1 && commands[0].length() == 1)
-									response = server.ResponseChallenge(commands[0]);
+								if (commands.length == 2)
+									server.ResponseChallenge(commands[0], commands[1], key);
 						}
 						
 						// send response

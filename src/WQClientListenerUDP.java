@@ -9,6 +9,7 @@ import java.net.DatagramSocket;
 public class WQClientListenerUDP implements Runnable
 {
 	public boolean challenged = false;
+	public boolean waiting = false;
 	public boolean playing = false;
 	private DatagramSocket socket;
 	
@@ -22,11 +23,10 @@ public class WQClientListenerUDP implements Runnable
 		try 							{ Thread.sleep(1000); 	} 
 		catch (InterruptedException e1) { e1.printStackTrace(); }
 		
-//		System.out.println("UDP Listener started.");
 		while (true)
 		{
 			// can't receive other challenge
-			if (challenged || playing)
+			if (challenged || waiting || playing)
 				continue;
 			
 			// create packet

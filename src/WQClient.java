@@ -230,6 +230,14 @@ public class WQClient
 					// add nickname in the command
 					command = command.concat(" ").concat(nickname);
 					
+					// check valid response
+					String[] tmp = command.split(" ");
+					if (tmp.length != 2)
+					{
+						response = "Command not available.";
+						break;						
+					}
+					
 					// write and read
 					WriteMessage(command);
 					response = ReadMessage();
@@ -239,14 +247,26 @@ public class WQClient
 				// response with translation words
 				if (listener.playing)
 				{
+					// add nickname in the command
+					command = command.concat(" ").concat(nickname);
+					
 					// write and read
 					WriteMessage(command);
 					response = ReadMessage();
+					
+					// check if end game -> reset status
+					String[] responses = response.split(" ");
+					if (responses[0].equals("END"))
+					{
+						listener.playing = false;
+						listener.waiting = false;
+						listener.challenged = false;
+					}
 					break;
 				}
 				
 				// unknown command
-				System.out.println("Command not available.");
+				response = "Command not available.";
 		}
 		return response;
 	}

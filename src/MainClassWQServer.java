@@ -146,12 +146,11 @@ public class MainClassWQServer
 									server.SetUserUDPAddress(commands[2], commands[0], commands[1]);
 								// read answer for challenge (Y/N) 
 								if (commands.length == 2)
-									server.ResponseChallenge(commands[0], commands[1], key);
+									response = server.ResponseChallenge(commands[0], commands[1], key);
 						}
 						
 						// send response
 						BufferUtils.WriteBuffer(client, buffer, response);
-//						System.out.println(response);
 					}
 				}
 				catch (IOException ex) 

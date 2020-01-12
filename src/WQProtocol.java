@@ -11,4 +11,5 @@ public class WQProtocol
 	public static final String COMMAND_SHOWSCORES 		= "score";
 	public static final String COMMAND_SHOWLEADERBOARD 	= "leaderboard";
 	public static final String COMMAND_LOGOUT 			= "logout";
+	public static final String RESPONSE_CHALLENGE		= "challenged";
 }

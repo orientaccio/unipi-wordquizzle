@@ -190,7 +190,6 @@ public class ThreadChallengeRoom implements Runnable
 		buffers[1] = (ByteBuffer) keys[1].attachment();
 	}
 	
-	// start the challenge game
 	// start the challenge
 	public void StartGame()
 	{
@@ -198,15 +197,11 @@ public class ThreadChallengeRoom implements Runnable
 		TranslateWords();
 	}
 	
-	// is the player in this room
-	
 	// is the player in the room
 	public boolean InRoom(String nickname)
 	{
 		return nickname.equals(this.nicknames[1]);
 	}
-	
-	// is the player in this room
 	
 	// is the player in the room
 	public boolean InRoom(SelectionKey key)
@@ -214,8 +209,6 @@ public class ThreadChallengeRoom implements Runnable
 		return key.equals(keys[0]) || key.equals(keys[1]);
 	}
 
-	// calculate result string to send to player
-	
 	// get nicknames of the players
 	public String[] GetNicknames()
 	{
@@ -277,19 +270,12 @@ public class ThreadChallengeRoom implements Runnable
 						wordsNull * POINTS_NULL;
 	}
 	
-	// finish the game
-	
 	// check if the game is finished: timeout/end words
-	
-	// is the game finished? (end words/timeout)
 	private boolean FinishGame()
 	{
 		return (wordsCounter[0] >= N_WORDS && wordsCounter[1] >= N_WORDS) 
 			|| (SecondsSinceStart() > TIMEOUT_GAME);
 	}	
-	
-	// translate words using MyMemory API
-	// translate all the words in wordsGame using MyMemory API
 	
 	// translate all the words
 	private void TranslateWords()
@@ -336,11 +322,6 @@ public class ThreadChallengeRoom implements Runnable
 			} 
 		}
 	}	
-	
-	// time counter since startTime
-	// process result from MyMemory API
-
-	// seconds since start
 	
 	// count seconds from start of game
 	private int SecondsSinceStart() 

@@ -1,22 +1,10 @@
-/**
- * WQServer is the server which manages all the game
- * 
- * The server persists all the information about
- * <registrations, friendship relations, user scores>
- * 
- * @author Chenxiang Zhang
- * @version 1.0
- */
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.text.ParseException;
@@ -32,25 +20,38 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+/**
+ * WQServer is the server which manages all the game
+ * 
+ * The server persists all the information about
+ * <registrations, friendship relations, user scores>
+ * 
+ * @author Chenxiang Zhang
+ * @version 1.0
+ */
+
 public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServerRMI
 {
+	// Class static variables
 	public static final int DEFAULT_PORT_TCP = 1919;
-
 	private static final long serialVersionUID = 1L;
 	private static final String PATH_USERDATA = "UserData.json";
 	private static final String PATH_WORDS = "words.json";
 	
 	/**
-	 * 	Class variables 
+	 * 	Class variables
 	 * 
 	 * 	@var	words: dictionary containing all the words from the file "dictionary.dat"
 	 * 	@var	users: dictionary containing all the registered user on the server
+	 *  @var	rooms: all the room spawned for the challenge
+	 *  @var	words: all the words of the dictionary
 	 */
 	private ThreadPoolExecutor executor;
 	private HashMap<String, UserData> users;
 	private List<ThreadChallengeRoom> rooms;
 	private List<String> words;
 	
+	// constructor
  	public WQServer() throws RemoteException
 	{
 		super();
@@ -202,7 +203,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		// nickFriend not found on this server
 		UserData tmpUser = users.get(nickUser);
 		UserData tmpFriend = users.get(nickFriend);
-		if (tmpUser == null || tmpFriend == null || tmpFriend.status == 0)
+		if (tmpUser == null || tmpFriend == null || tmpFriend.status == 0 || tmpFriend.status == 2)
 			return WQProtocol.CODE_FAIL;
 		
 		// friendship not enstablished
@@ -278,7 +279,6 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		JSONObject leaderboard = new JSONObject();
 		JSONArray arrayUsers = new JSONArray();
 		
-//		List<String> tmpFriends = tmpUser.listFriends;
 		List<String> tmpFriends = new UserData(tmpUser).listFriends;
 		while(tmpFriends.size() > 0)
 		{
@@ -307,6 +307,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 	/* -------------------------- PUBLIC FUNCTIONS -------------------------- */
 	/* ---------------------------------------------------------------------- */
 	
+	// response for the challenge
 	public String ResponseChallenge(String challengedAnswer, String nickFriend, SelectionKey friendKey) throws IOException
 	{
 		String response = null;
@@ -320,6 +321,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 				{
 					// start challenge
 					case "Y":
+						users.get(nickFriend).status = 2;
 						rooms.get(i).SetFriendSocketChannel(friendKey);
 						rooms.get(i).StartGame();
 						break;
@@ -327,6 +329,13 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 					case "N":
 						rooms.get(i).refused = true;
 						response = "Challenge refused.";
+						
+						// reset status player 0
+						String[] nicknames = rooms.get(i).GetNicknames();
+						users.get(nicknames[0]).status = 1;
+						
+						// remove room
+						rooms.remove(i);
 						break;
 					// timeout/error
 					default:
@@ -338,10 +347,14 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		return response;
 	}
 	
+	// create threadChallengeRoom
 	public void CreateChallengeRoom(String userNick, String friendNick, SelectionKey userKey)
 	{		
 		// choose words
 		List<String> wordsGame = RandomWords();
+		
+		// set status: inRoom
+		users.get(userNick).status = 2;
 		
 		// start thread challenge room
 		ThreadChallengeRoom room = new ThreadChallengeRoom(userNick, friendNick, userKey, wordsGame);
@@ -349,6 +362,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		rooms.add(room);
 	}
 	
+	// set the user UDP variables
 	public void SetUserUDPAddress(String user, String address, String port) throws UnknownHostException
 	{
 		UserData tmp = users.get(user);
@@ -356,13 +370,14 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		tmp.UDPPort = Integer.parseInt(port);
 	}
 
+	// is the player in a room <-> status = playing
 	public boolean InRooms(SelectionKey key)
 	{
 		for (int i = 0; i < rooms.size(); i++)
 		{
 			if (rooms.get(i).InRoom(key))
 			{
-				// chalenge not finished
+				// challenge not finished
 				if (!rooms.get(i).finish)
 					return true;
 				// challenge finished
@@ -373,9 +388,12 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 					int[] scores = rooms.get(i).GetScores();
 					rooms.remove(i);
 					
-					// save new scores in JSON
+					// save new scores in JSON and reset status
 					for (int j = 0; j < scores.length; j++)
+					{
 						users.get(nicknames[j]).listScores.add(scores[j]);
+						users.get(nicknames[j]).status = 1;
+					}
 					SaveUserDataJSON();
 					return false;
 				}
@@ -388,6 +406,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 	/* -------------------------- PRIVATE FUNCTIONS ------------------------- */
 	/* ---------------------------------------------------------------------- */
 	
+	// check if the user exits on this server
 	private boolean UserExists(String nickUser)
 	{
 		if (nickUser == null)
@@ -403,6 +422,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		return false;
 	}
 	
+	// forwards the UDP challenge request to the friend
 	private void ForwardChallengeUDP(UserData user, UserData friend) throws IOException
 	{
 		// create socket and datagram
@@ -423,7 +443,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		packet.setData(data, 0, data.length);
 		packet.setLength(data.length);
 		socket.send(packet);
-//		System.out.println(request);
+		System.out.println("REQUEST UDP: \t" + request);
 		
 		// reset output streams
 		byteStream.reset(); 
@@ -431,6 +451,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 		socket.close();
 	}
 	
+	// save all userData in JSON
 	@SuppressWarnings("unchecked")
 	private void SaveUserDataJSON()
 	{
@@ -468,6 +489,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
         }
 	}
 	
+	// read and initialize all userData from JSON
 	private void ReadUserDataJSON()
 	{
 		JSONParser parser = new JSONParser();

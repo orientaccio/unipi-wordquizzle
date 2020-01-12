@@ -1,3 +1,11 @@
+/**
+ * WQProtocol contains all the information needed for the communication
+ * between the client and the server.
+ * 
+ * @author Chenxiang Zhang
+ * @version 1.0
+ */
+
 public class WQProtocol
 {
 	public static final int MAX_MESSAGE_LENGTH 			= 1024;

@@ -16,31 +16,36 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 /**
- * ThreadChallengeRoom is spawned by WQServer when two client
- * want to start the game.
+ * ThreadChallengeRoom is spawned by WQServer every time one client
+ * sends the challenge request to his friend.
  * This Thread manages the entire duration of the challenge.
  * 
  * @author Chenxiang Zhang
  * @version 1.0
  */
+
 public class ThreadChallengeRoom implements Runnable
 {
+	// game rules constrains
 	public static final int TIMEOUT_ACCEPT 	= 5;
 	public static final int TIMEOUT_GAME 	= 30;
 	public static final int TIME_GAME 		= 15;
 	public static final int N_WORDS 		= 3;
 	public static final int N_PLAYERS 		= 2;
 	
+	// game points values
 	private static final int POINTS_VICTORY = 3;
 	private static final int POINTS_CORRECT = 2;
 	private static final int POINTS_WRONG	= -1;
 	private static final int POINTS_NULL	= 0;
 	
+	// machine-state of this room
 	public boolean started 					= false;
 	public boolean refused 					= false;
 	public boolean finish 					= false;
 	public boolean timeout_accept 			= false;
 	
+	// player variables
 	private String[] nicknames 				= new String[N_PLAYERS];
 	private SelectionKey[] keys 			= new SelectionKey[N_PLAYERS];
 	private SocketChannel[] socketChannels 	= new SocketChannel[N_PLAYERS];
@@ -55,6 +60,7 @@ public class ThreadChallengeRoom implements Runnable
 	private List<String> wordsGame;
 	private List<String> wordsTranslated;
 	
+	// constructor
 	public ThreadChallengeRoom(String nickUser, String nickFriend, SelectionKey userKey, List<String> words)
 	{
 		this.nicknames[0] 		= nickUser;
@@ -105,7 +111,10 @@ public class ThreadChallengeRoom implements Runnable
 			
 			// challenge refused/timeout
 			if (refused || timeout_accept)
+			{
+				finish = true;
 				return;
+			}
 			
 			// initialize selector
 			Selector selector = Selector.open();
@@ -162,10 +171,7 @@ public class ThreadChallengeRoom implements Runnable
 			String response0 = CalculateResults(0, 1);
 			String response1 = CalculateResults(1, 0);
 			BufferUtils.WriteBuffer(socketChannels[0], buffers[0], response0);
-			BufferUtils.WriteBuffer(socketChannels[1], buffers[1], response1);
-			
-			// save scores JSON
-			
+			BufferUtils.WriteBuffer(socketChannels[1], buffers[1], response1);			
 			
 			// finish challenge -> close all
 			selector.close();
@@ -230,11 +236,8 @@ public class ThreadChallengeRoom implements Runnable
 	private String CalculateResults(int indexPlayer, int indexEnemy)
 	{
 		// calculate points
-		int wordsNull = N_WORDS - wordsCorrect[indexPlayer] - wordsWrong[indexPlayer];
-		scoreGame[indexPlayer] = wordsCorrect[indexPlayer] * POINTS_CORRECT +
-								wordsWrong[indexPlayer] * POINTS_WRONG;
-		scoreGame[indexEnemy] = wordsCorrect[indexEnemy] * POINTS_CORRECT +
-								wordsWrong[indexEnemy] * POINTS_WRONG;
+		CalculatePoints(indexPlayer);
+		CalculatePoints(indexEnemy);
 		
 		// response message
 		String result = String.format("END GAME. \n" + 
@@ -246,7 +249,8 @@ public class ThreadChallengeRoom implements Runnable
 									"Enemy score:   %d\n" +
 									"-----------------\n", 
 									wordsCorrect[indexPlayer], wordsWrong[indexPlayer],
-									wordsNull, scoreGame[indexPlayer], scoreGame[indexEnemy]);
+									N_WORDS-wordsCorrect[indexPlayer]-wordsWrong[indexPlayer], 
+									scoreGame[indexPlayer], scoreGame[indexEnemy]);
 		
 		// add victory point
 		boolean winner = scoreGame[indexPlayer] > scoreGame[indexEnemy];
@@ -264,6 +268,17 @@ public class ThreadChallengeRoom implements Runnable
 		return result;
 	}
 	
+	// calculate points
+	private void CalculatePoints(int index)
+	{
+		int wordsNull = N_WORDS - wordsCorrect[index] - wordsWrong[index];
+		scoreGame[index] = wordsCorrect[index] * POINTS_CORRECT +
+						wordsWrong[index] * POINTS_WRONG +
+						wordsNull * POINTS_NULL;
+	}
+	
+	// finish the game
+	
 	// check if the game is finished: timeout/end words
 	
 	// is the game finished? (end words/timeout)
@@ -271,8 +286,9 @@ public class ThreadChallengeRoom implements Runnable
 	{
 		return (wordsCounter[0] >= N_WORDS && wordsCounter[1] >= N_WORDS) 
 			|| (SecondsSinceStart() > TIMEOUT_GAME);
-	}
+	}	
 	
+	// translate words using MyMemory API
 	// translate all the words in wordsGame using MyMemory API
 	
 	// translate all the words
@@ -320,6 +336,8 @@ public class ThreadChallengeRoom implements Runnable
 			} 
 		}
 	}	
+	
+	// time counter since startTime
 	// process result from MyMemory API
 
 	// seconds since start

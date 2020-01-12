@@ -7,8 +7,28 @@ import java.util.Date;
 import java.util.ArrayList;
 import java.util.Calendar;
 
+/**
+ * UserData is class that contains all the information about an user
+ * These information will be used to be persisted. 
+ * 
+ * @author Chenxiang Zhang
+ * @version 1.0
+ */
+
 public class UserData implements Serializable
 {
+	/**
+	 * 	Class variables
+	 * 
+	 * 	@var	nickName: player nickname
+	 * 	@var	password: player password
+	 *  @var	registrationDate: player registration date
+	 *  @var	listFriends: list of all the player friends
+	 *  @var	listScores: list of all the player challenge scores
+	 * 	@var	status: {0 = offline, 1 = online, 2 = in room}
+	 *  @var	UDPAddress: UDP address for challenge
+	 *  @var	UDPPort: UDP port for challenge
+	 */
 	private static final long serialVersionUID = 1L;
 	public String nickName;
 	public String password;
@@ -76,6 +96,12 @@ public class UserData implements Serializable
 		this.status = 0;
 	}
 	
+	/**
+	 * 	Check if exitsts the friendship relation
+	 * 
+	 *  @return	true if is friend with nickUser
+	 *  		false else
+	 */
 	public boolean IsFriendWith(String nickUser)
 	{
 		if (nickUser == null)
@@ -83,6 +109,11 @@ public class UserData implements Serializable
 		return listFriends.contains(nickUser);
 	}
 	
+	/**
+	 * 	Get the total score of the player = sum of all the score
+	 * 
+	 *  @return	sum of all the score
+	 */
 	public int GetTotalScore()
 	{
 		int total = 0;

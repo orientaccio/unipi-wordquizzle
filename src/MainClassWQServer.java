@@ -7,6 +7,14 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.*;
 
+/**
+ * MainClassWQServer is class containing the main for the server.
+ * Execute this to start the server side. 
+ * 
+ * @author Chenxiang Zhang
+ * @version 1.0
+ */
+
 public class MainClassWQServer 
 {
 	public static void main(String[] args) throws RemoteException
@@ -101,6 +109,7 @@ public class MainClassWQServer
 						String response = null;
 						String request = BufferUtils.ReadBuffer(client, buffer);
 						request = request.trim();
+						System.out.println("REQUEST: \t" + request);
 						
 						// get the request command values
 						String[] commands = request.split(" ");
@@ -151,6 +160,7 @@ public class MainClassWQServer
 						
 						// send response
 						BufferUtils.WriteBuffer(client, buffer, response);
+						System.out.println("RESPONSE: \t" + response);
 					}
 				}
 				catch (IOException ex) 

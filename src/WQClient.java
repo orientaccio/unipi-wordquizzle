@@ -12,8 +12,28 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+/**
+ * WQClient is class containing all the information of client.
+ * 
+ * @author Chenxiang Zhang
+ * @version 1.0
+ */
+
 public class WQClient
 {
+	/**
+	 * 	Class variables
+	 * 
+	 * 	@var	nickName: player nickname
+	 * 	@var	connected: is the player logged
+	 *  @var	port: port for communication TCP
+	 *  @var	address: address for communication TCP
+	 *  @var	client: channel for communication TCP
+	 * 	@var	buffer: buffer for communication TCP
+	 *  @var	socketUDP: socket for UDP challenge 
+	 *  @var	listener: thread listener for UDP challenge 
+	 */
+	
 	public static int DEFAULT_PORT_TCP = 1919;
 	public String nickname;
 	public boolean connected;
@@ -36,7 +56,6 @@ public class WQClient
 	// process the input command
 	public String ProcessCommand(String command, String[] commands) throws IOException, ParseException
 	{
-		int result = 0;
 		boolean success = false;
 		String response = "";
 		
@@ -323,6 +342,12 @@ public class WQClient
 				listener.challenged = false;
 				listener.playing = true;
 			} 
+			else
+			{
+				listener.waiting = false;
+				listener.challenged = false;
+				listener.playing = false;
+			}
 	    }
 		// challenge refused/timeout
 		catch (NumberFormatException e) 

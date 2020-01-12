@@ -2,16 +2,21 @@ import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.registry.*;
 import java.util.Scanner;
-
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+
+/**
+ * MainClassWQClient is class containing the main for the client.
+ * Execute this to start the client side. 
+ * 
+ * @author Chenxiang Zhang
+ * @version 1.0
+ */
 
 public class MainClassWQClient
 {
 	public static void main(String[] args) throws NotBoundException, InterruptedException, IOException, ParseException
 	{
+		// create client
 		WQClient client = new WQClient();
 		
 		// lookup in the registry to find the register service

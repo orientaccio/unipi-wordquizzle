@@ -1,18 +1,34 @@
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 
+/**
+ * WQClientListenerUDP is class that handles all the 
+ * UDP challenge request from the server.
+ * 
+ * @author Chenxiang Zhang
+ * @version 1.0
+ */
+
 public class WQClientListenerUDP implements Runnable
 {
+	/**
+	 * 	Class variables
+	 * 
+	 * 	@var	challenged: is the player being challenged by a friend
+	 * 	@var	waiting: is the player waiting for the friend to accept the challenge
+	 *  @var	playing: is the player playing a challenge
+	 *  @var	socket: socket for UDP challenge request
+	 */
+	
 	public boolean challenged = false;
 	public boolean waiting = false;
 	public boolean playing = false;
 	private DatagramSocket socket;
 	
+	// constructor
 	public WQClientListenerUDP(DatagramSocket socket)
 	{
 		this.socket = socket;
@@ -33,10 +49,6 @@ public class WQClientListenerUDP implements Runnable
 			byte[] buffer = new byte[50];
 			DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
-			// input and output streams
-			ByteArrayOutputStream oByteStream = new ByteArrayOutputStream();
-			DataOutputStream oDataStream = new DataOutputStream(oByteStream);
-			
 			// receive message
 			try
 			{

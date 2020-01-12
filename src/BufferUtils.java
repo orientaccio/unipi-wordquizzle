@@ -2,6 +2,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
+/**
+ * BufferUtils contains static methods for communication via buffer.
+ * 
+ * @author Chenxiang Zhang
+ * @version 1.0
+ */
+
 public class BufferUtils
 {
 	public static void WriteBuffer(SocketChannel client, ByteBuffer buffer, String response) throws IOException

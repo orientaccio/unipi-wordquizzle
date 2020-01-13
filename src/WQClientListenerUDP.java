@@ -61,6 +61,8 @@ public class WQClientListenerUDP implements Runnable
 				// check if not null
 				if (message != null)
 					challenged = true;
+				else
+					System.out.println("MESSAGGIO VUOTO");
 			} 
 			catch (IOException e)
 			{

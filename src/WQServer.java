@@ -83,7 +83,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 	 * 					password null
 	 * @throws ParseException 
 	 */
-	public int RegisterUser(String nickUser, String password) throws RemoteException
+	public synchronized int RegisterUser(String nickUser, String password) throws RemoteException
 	{
 		if (nickUser == null || password == null)
 			return WQProtocol.CODE_FAIL;
@@ -311,6 +311,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 	public String ResponseChallenge(String challengedAnswer, String nickFriend, SelectionKey friendKey) throws IOException
 	{
 		String response = null;
+		String[] nicknames;
 		
 		for (int i = 0; i < rooms.size(); i++)
 		{
@@ -331,7 +332,7 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 						response = "Challenge refused.";
 						
 						// reset status player 0
-						String[] nicknames = rooms.get(i).GetNicknames();
+						nicknames = rooms.get(i).GetNicknames();
 						users.get(nicknames[0]).status = 1;
 						
 						// remove room
@@ -340,6 +341,13 @@ public class WQServer extends UnicastRemoteObject implements IWQServer, IWQServe
 					// timeout/error
 					default:
 						response = "Challenge timeout/Error.";
+						
+						// reset status player 0
+						nicknames = rooms.get(i).GetNicknames();
+						users.get(nicknames[0]).status = 1;
+						
+						// remove room
+						rooms.remove(i);
 				}
 				break;
 			}

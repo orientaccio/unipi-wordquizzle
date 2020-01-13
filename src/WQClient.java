@@ -51,6 +51,12 @@ public class WQClient
 	{
 		connected = false;
 		nickname = null;
+		
+		address = null;
+		client = null;
+		buffer = null;
+		socketUDP = null;
+		listener = null;
 	}
 	
 	// process the input command
@@ -244,7 +250,7 @@ public class WQClient
 				break;
 			default:
 				// response to challenge
-				if (listener.challenged)
+				if (listener != null && listener.challenged)
 				{
 					// add nickname in the command
 					command = command.concat(" ").concat(nickname);
@@ -264,7 +270,7 @@ public class WQClient
 					break;
 				}
 				// response with translation words
-				if (listener.playing)
+				if (listener != null && listener.playing)
 				{
 					// add nickname in the command
 					command = command.concat(" ").concat(nickname);
